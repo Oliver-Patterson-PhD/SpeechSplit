@@ -1,20 +1,18 @@
 import os
 import argparse
 import torch
-from torch.backends import cudnn
-
-from solver import Solver
-from data_loader import get_loader
-from hparams import hparams, hparams_debug_string
-
+import solver
+import data_loader
+import hparams
 
 
 def str2bool(v):
     return v.lower() in ('true')
 
+
 def main(config):
     # For fast training.
-    cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = True
 
     # Create directories if not exist.
     if not os.path.exists(config.log_dir):
@@ -25,18 +23,17 @@ def main(config):
         os.makedirs(config.sample_dir)
 
     # Data loader.
-    vcc_loader = get_loader(hparams)
-    
-    # Solver for training
-    solver = Solver(vcc_loader, config, hparams)
+    vcc_loader = data_loader.get_loader(hparams)
 
-    solver.train()
-    
-        
-    
+    # Solver for training
+    slvr = solver.Solver(vcc_loader, config, hparams)
+
+    slvr.train()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-   
+
     # Training configuration.
     parser.add_argument('--num_iters', type=int, default=1000000, help='number of total iterations')
     parser.add_argument('--g_lr', type=float, default=0.0001, help='learning rate for G')
@@ -60,5 +57,5 @@ if __name__ == '__main__':
 
     config = parser.parse_args()
     print(config)
-    print(hparams_debug_string())
+    print(hparams.hparams_debug_string())
     main(config)
