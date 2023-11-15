@@ -85,7 +85,7 @@ class Encoder_6(torch.nn.Module):
 
     def forward(self, x):
         for conv in self.convolutions:
-            x = torch.nn.F.relu(conv(x))
+            x = torch.nn.relu(conv(x))
             x = x.transpose(1, 2)
             x = self.interp(x, self.len_org.expand(x.size(0)))
             x = x.transpose(1, 2)
@@ -139,8 +139,8 @@ class Encoder_7(torch.nn.Module):
         x = x_f0[:, :self.dim_freq, :]
         f0 = x_f0[:, self.dim_freq:, :]
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
-            x = torch.functional.F.relu(conv_1(x))
-            f0 = torch.functional.F.relu(conv_2(f0))
+            x = torch.functional.relu(conv_1(x))
+            f0 = torch.functional.relu(conv_2(f0))
             x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
             x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
             x_f0 = x_f0.transpose(1, 2)
@@ -284,12 +284,12 @@ class InterpLnr(torch.nn.Module):
         idx_scaled = indices / scales.unsqueeze(-1)
         idx_scaled_fl = torch.floor(idx_scaled)
         lambda_ = idx_scaled - idx_scaled_fl
-        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size =(batch_size * self.max_num_seg, 1), device=device)
+        len_seg = torch.randint(low=self.min_len_seg, high=self.max_len_seg, size=(batch_size * self.max_num_seg, 1), device=device)
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1)
         offset = len_seg.view(batch_size, -1).cumsum(dim=-1)
         # offset starts from the 2nd segment
-        offset = torch.functional.F.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
+        offset = torch.functional.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
         idx_scaled_org = idx_scaled_fl + offset
         len_seq_rp = torch.repeat_interleave(len_seq, self.max_num_seg)
         idx_mask_org = idx_scaled_org < (len_seq_rp - 1).unsqueeze(-1)
