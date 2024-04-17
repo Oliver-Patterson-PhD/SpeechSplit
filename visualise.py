@@ -39,13 +39,17 @@ if not os.path.exists(config.sample_dir):
     os.makedirs(config.sample_dir)
 
 # Data loader.
-vcc_loader = data_loader.get_loader(hparams)
+vcc_loader = data_loader.get_loader()
 
 slvr = solver.Solver(None, config, hparams)
 
+first_data = next(iter(vcc_loader))
+
 model_graph = torchview.draw_graph(
     slvr.G,
+    input_data=first_data,
     graph_name="SpeechSplit",
+    expand_nested=True,
     hide_inner_tensors=False,
     hide_module_functions=False,
 )

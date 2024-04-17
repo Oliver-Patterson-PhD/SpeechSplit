@@ -1,0 +1,36 @@
+SpeechSplit:
+
+encoder_1: Encoder_7(
+  convolutions_1: ModuleList(
+    ConvNorm((conv): Conv1d(80, 512, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(32, 512, eps=1e-05, affine=True)
+    ConvNorm((conv): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(32, 512, eps=1e-05, affine=True)
+    ConvNorm((conv): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(32, 512, eps=1e-05, affine=True)
+  )
+  lstm_1: LSTM(512, 8, num_layers=2, batch_first=True, bidirectional=True)
+  convolutions_2: ModuleList(
+    ConvNorm((conv): Conv1d(257, 256, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(16, 256, eps=1e-05, affine=True)
+    ConvNorm((conv): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(16, 256, eps=1e-05, affine=True)
+    ConvNorm((conv): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(16, 256, eps=1e-05, affine=True)
+  )
+  lstm_2: LSTM(256, 32, batch_first=True, bidirectional=True)
+  interp: InterpLnr()
+)
+
+encoder_2: Encoder_t(
+  convolutions: ModuleList(
+    ConvNorm((conv): Conv1d(80, 128, kernel_size=(5,), stride=(1,), padding=(2,)))
+    GroupNorm(8, 128, eps=1e-05, affine=True)
+  )
+  lstm: LSTM(128, 1, batch_first=True, bidirectional=True)
+)
+
+decoder: Decoder_3(
+  linear_projection: LinearNorm((linear_layer): Linear(in_features=1024, out_features=80, bias=True))
+  lstm: LSTM(164, 512, num_layers=3, batch_first=True, bidirectional=True)
+)

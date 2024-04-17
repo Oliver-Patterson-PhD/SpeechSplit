@@ -2,14 +2,14 @@ import os
 import pickle
 import numpy
 
-rootDir = 'assets/spmel'
+rootDir = "assets/spmel"
 dirName, subdirList, _ = next(os.walk(rootDir))
-print('Found directory: %s' % dirName)
+print("Found directory: %s" % dirName)
 
 
 speakers = []
 for speaker in sorted(subdirList):
-    print('Processing speaker: %s' % speaker)
+    print("Processing speaker: %s" % speaker)
     utterances = []
     utterances.append(speaker)
     _, _, fileList = next(os.walk(os.path.join(dirName, speaker)))
@@ -18,7 +18,7 @@ for speaker in sorted(subdirList):
     # modify as needed
     # may use generalized speaker embedding for zero-shot conversion
     spkid = numpy.zeros((82,), dtype=numpy.float32)
-    if speaker == 'p226':
+    if speaker == "p226":
         spkid[1] = 1.0
     else:
         spkid[7] = 1.0
@@ -29,5 +29,5 @@ for speaker in sorted(subdirList):
         utterances.append(os.path.join(speaker, fileName))
     speakers.append(utterances)
 
-with open(os.path.join(rootDir, 'train.pkl'), 'wb') as handle:
+with open(os.path.join(rootDir, "train.pkl"), "wb") as handle:
     pickle.dump(speakers, handle)

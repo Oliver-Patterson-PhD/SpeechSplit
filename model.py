@@ -1,4 +1,5 @@
 import torch
+from hparams import hparams
 
 
 class LinearNorm(torch.nn.Module):
@@ -50,7 +51,7 @@ class ConvNorm(torch.nn.Module):
 class Encoder_t(torch.nn.Module):
     """Rhythm Encoder"""
 
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
         self.chs_grp = hparams.chs_grp
         self.dim_emb = hparams.dim_spk_emb
@@ -101,7 +102,7 @@ class Encoder_t(torch.nn.Module):
 class Encoder_6(torch.nn.Module):
     """F0 encoder"""
 
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
         self.chs_grp = hparams.chs_grp
         self.dim_emb = hparams.dim_spk_emb
@@ -129,7 +130,7 @@ class Encoder_6(torch.nn.Module):
         self.lstm = torch.nn.LSTM(
             self.dim_enc_3, self.dim_neck_3, 1, batch_first=True, bidirectional=True
         )
-        self.interp = InterpLnr(hparams)
+        self.interp = InterpLnr()
 
     def forward(self, x):
         for conv in self.convolutions:
@@ -155,7 +156,7 @@ class Encoder_6(torch.nn.Module):
 class Encoder_7(torch.nn.Module):
     """Sync Encoder module"""
 
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
 
         self.chs_grp = hparams.chs_grp
@@ -208,14 +209,14 @@ class Encoder_7(torch.nn.Module):
         self.lstm_2 = torch.nn.LSTM(
             self.dim_enc_3, self.dim_neck_3, 1, batch_first=True, bidirectional=True
         )
-        self.interp = InterpLnr(hparams)
+        self.interp = InterpLnr()
 
     def forward(self, x_f0):
         x = x_f0[:, : self.dim_freq, :]
         f0 = x_f0[:, self.dim_freq :, :]
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
-            x = torch.functional.relu(conv_1(x))
-            f0 = torch.functional.relu(conv_2(f0))
+            x = torch.nn.functional.relu(conv_1(x))
+            f0 = torch.nn.functional.relu(conv_2(f0))
             x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
             x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
             x_f0 = x_f0.transpose(1, 2)
@@ -251,7 +252,7 @@ class Encoder_7(torch.nn.Module):
 class Decoder_3(torch.nn.Module):
     """Decoder module"""
 
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
         self.dim_emb = hparams.dim_spk_emb
         self.dim_freq = hparams.dim_freq
@@ -302,23 +303,31 @@ class Decoder_4(torch.nn.Module):
 class Generator_3(torch.nn.Module):
     """SpeechSplit model"""
 
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
-        self.decoder = Decoder_3(hparams)
-        self.encoder_1 = Encoder_7(hparams)
-        self.encoder_2 = Encoder_t(hparams)
+        self.decoder = Decoder_3()
+        self.encoder_1 = Encoder_7()
+        self.encoder_2 = Encoder_t()
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
 
     def forward(self, x_f0, x_org, c_trg):
+        print("Forward Instance:")
+        print(f"    x_f0: {x_f0.shape}")
+        print(f"    x_org: {x_org.shape}")
+        print(f"    c_trg: {c_trg.shape}")
+        exit()
         x_1 = x_f0.transpose(2, 1)
-        codes_x, codes_f0 = self.encoder_1(x_1)
-        code_exp_1 = codes_x.repeat_interleave(self.freq, dim=1)
-        code_exp_3 = codes_f0.repeat_interleave(self.freq_3, dim=1)
         x_2 = x_org.transpose(2, 1)
+
+        codes_x, codes_f0 = self.encoder_1(x_1)
         codes_2 = self.encoder_2(x_2, None)
+
+        code_exp_1 = codes_x.repeat_interleave(self.freq, dim=1)
         code_exp_2 = codes_2.repeat_interleave(self.freq_2, dim=1)
+        code_exp_3 = codes_f0.repeat_interleave(self.freq_3, dim=1)
+
         encoder_outputs = torch.cat(
             (
                 code_exp_1,
@@ -361,7 +370,7 @@ class Generator_6(torch.nn.Module):
 
 
 class InterpLnr(torch.nn.Module):
-    def __init__(self, hparams):
+    def __init__(self):
         super().__init__()
         self.max_len_pad = hparams.max_len_pad
         self.max_len_seg = hparams.max_len_seg
@@ -404,7 +413,7 @@ class InterpLnr(torch.nn.Module):
         idx_mask = idx_scaled_fl < (len_seg - 1)
         offset = len_seg.view(batch_size, -1).cumsum(dim=-1)
         # offset starts from the 2nd segment
-        offset = torch.functional.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
+        offset = torch.nn.functional.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
         idx_scaled_org = idx_scaled_fl + offset
         len_seq_rp = torch.repeat_interleave(len_seq, self.max_num_seg)
         idx_mask_org = idx_scaled_org < (len_seq_rp - 1).unsqueeze(-1)

@@ -3,11 +3,11 @@ import argparse
 import torch
 import solver
 import data_loader
-import hparams
+from hparams import hparams, hparams_debug_string
 
 
 def str2bool(v):
-    return v.lower() in ('true')
+    return v.lower() in ("true")
 
 
 def main(config):
@@ -23,7 +23,7 @@ def main(config):
         os.makedirs(config.sample_dir)
 
     # Data loader.
-    vcc_loader = data_loader.get_loader(hparams)
+    vcc_loader = data_loader.get_loader()
 
     # Solver for training
     slvr = solver.Solver(vcc_loader, config, hparams)
@@ -31,31 +31,31 @@ def main(config):
     slvr.train()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Training configuration.
-    parser.add_argument('--num_iters', type=int, default=1000000, help='number of total iterations')
-    parser.add_argument('--g_lr', type=float, default=0.0001, help='learning rate for G')
-    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
-    parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
-    parser.add_argument('--resume_iters', type=int, default=None, help='resume training from this step')
+    parser.add_argument("--num_iters", type=int, default=1000000, help="number of total iterations")
+    parser.add_argument("--g_lr", type=float, default=0.0001, help="learning rate for G")
+    parser.add_argument("--beta1", type=float, default=0.9, help="beta1 for Adam optimizer")
+    parser.add_argument("--beta2", type=float, default=0.999, help="beta2 for Adam optimizer")
+    parser.add_argument("--resume_iters", type=int, default=None, help="resume training from this step")
 
     # Miscellaneous.
-    parser.add_argument('--use_tensorboard', type=str2bool, default=False)
-    parser.add_argument('--device_id', type=int, default=0)
+    parser.add_argument("--use_tensorboard", type=str2bool, default=False)
+    parser.add_argument("--device_id", type=int, default=0)
 
     # Directories.
-    parser.add_argument('--log_dir', type=str, default='run/logs')
-    parser.add_argument('--model_save_dir', type=str, default='run/models')
-    parser.add_argument('--sample_dir', type=str, default='run/samples')
+    parser.add_argument("--log_dir", type=str, default="run/logs")
+    parser.add_argument("--model_save_dir", type=str, default="run/models")
+    parser.add_argument("--sample_dir", type=str, default="run/samples")
 
     # Step size.
-    parser.add_argument('--log_step', type=int, default=10)
-    parser.add_argument('--sample_step', type=int, default=1000)
-    parser.add_argument('--model_save_step', type=int, default=1000)
+    parser.add_argument("--log_step", type=int, default=10)
+    parser.add_argument("--sample_step", type=int, default=1000)
+    parser.add_argument("--model_save_step", type=int, default=1000)
 
     config = parser.parse_args()
     print(config)
-    print(hparams.hparams_debug_string())
+    print(hparams_debug_string())
     main(config)

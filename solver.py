@@ -56,9 +56,9 @@ class Solver(object):
             self.build_tensorboard()
 
     def build_model(self):
-        self.G = Generator(self.hparams)
+        self.G = Generator()
 
-        self.Interp = InterpLnr(self.hparams)
+        self.Interp = InterpLnr()
 
         self.g_optimizer = torch.optim.Adam(
             self.G.parameters(), self.g_lr, [self.beta1, self.beta2]
@@ -148,10 +148,18 @@ class Solver(object):
             #                               2. Train the generator                                #
             # =================================================================================== #
 
+            print("DATA:")
+            print(f"\tdata_iter: {data_iter}")
+            print(f"\tx_real_org: {x_real_org.shape}")
+            print(f"\temb_org: {emb_org.shape}")
+            print(f"\tf0_org: {f0_org.shape}")
+            print(f"\tlen_org: {len_org.shape}")
             self.G = self.G.train()
 
             # Identity mapping loss
             x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
+            print(f"\tx_f0: {x_f0.shape}")
+            print(f"\nemb_org: {emb_org}")
             x_f0_intrp = self.Interp(x_f0, len_org)
             f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
             x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
@@ -301,22 +309,22 @@ class Solver(object):
                             fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(
                                 5, 1, sharex=True
                             )
-                            im1 = ax1.imshow(
+                            ax1.imshow(
                                 melsp_gd_pad,
                                 aspect="auto",
                                 vmin=min_value,
                                 vmax=max_value,
                             )
-                            im2 = ax2.imshow(
+                            ax2.imshow(
                                 melsp_out, aspect="auto", vmin=min_value, vmax=max_value
                             )
-                            im3 = ax3.imshow(
+                            ax3.imshow(
                                 melsp_woC, aspect="auto", vmin=min_value, vmax=max_value
                             )
-                            im4 = ax4.imshow(
+                            ax4.imshow(
                                 melsp_woR, aspect="auto", vmin=min_value, vmax=max_value
                             )
-                            im5 = ax5.imshow(
+                            ax5.imshow(
                                 melsp_woF, aspect="auto", vmin=min_value, vmax=max_value
                             )
                             plt.savefig(

@@ -3,6 +3,7 @@ import os
 import pickle
 import torch
 import multiprocessing
+from hparams import hparams
 
 
 class Utterances(torch.utils.data.Dataset):
@@ -85,7 +86,7 @@ class Utterances(torch.utils.data.Dataset):
 
 
 class MyCollator(object):
-    def __init__(self, hparams):
+    def __init__(self):
         self.min_len_seq = hparams.min_len_seq
         self.max_len_seq = hparams.max_len_seq
         self.max_len_pad = hparams.max_len_pad
@@ -153,12 +154,12 @@ class MultiSampler(torch.utils.data.sampler.Sampler):
         return len(self.sample_idx_array)
 
 
-def get_loader(hparams):
+def get_loader():
     """Build and return a data loader."""
 
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
 
-    my_collator = MyCollator(hparams)
+    my_collator = MyCollator()
 
     sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
 
