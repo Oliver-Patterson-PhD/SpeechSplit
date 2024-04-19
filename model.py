@@ -80,22 +80,29 @@ class Encoder_t(torch.nn.Module):
         )
 
     def forward(self, x, mask):
+        print(f"\t\tx:                          {x.shape}")
         for conv in self.convolutions:
+            print("\tloop")
             x = torch.nn.functional.relu(conv(x))
+            print(f"\t\tx:                          {x.shape}")
+            print("\tendloop")
         x = x.transpose(1, 2)
+        print(f"\t\tx:                          {x.shape}")
         self.lstm.flatten_parameters()
         outputs, _ = self.lstm(x)
+        print(f"\t\toutputs:                    {outputs.shape}")
         if mask is not None:
             outputs = outputs * mask
         out_forward = outputs[:, :, : self.dim_neck_2]
         out_backward = outputs[:, :, self.dim_neck_2 :]
-        codes = torch.cat(
-            (
-                out_forward[:, self.freq_2 - 1 :: self.freq_2, :],
-                out_backward[:, :: self.freq_2, :],
-            ),
-            dim=-1,
-        )
+        print(f"\t\tout_forward:                {out_forward.shape}")
+        print(f"\t\tout_backward:               {out_backward.shape}")
+        code_1 = out_forward[:, self.freq_2 - 1 :: self.freq_2, :]
+        code_2 = out_backward[:, :: self.freq_2, :]
+        print(f"\t\tcode_1:                     {code_1.shape}")
+        print(f"\t\tcode_2:                     {code_2.shape}")
+        codes = torch.cat((code_1, code_2), dim=-1)
+        print(f"\t\tcodes:                      {codes.shape}")
         return codes
 
 
@@ -212,40 +219,68 @@ class Encoder_7(torch.nn.Module):
         self.interp = InterpLnr()
 
     def forward(self, x_f0):
+        print(f"\t\tx_f0:                       {x_f0.shape}")
         x = x_f0[:, : self.dim_freq, :]
         f0 = x_f0[:, self.dim_freq :, :]
+        print(f"\t\tx:                          {x.shape}")
+        print(f"\t\tf0:                         {f0.shape}")
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
+            print("\tloop")
             x = torch.nn.functional.relu(conv_1(x))
             f0 = torch.nn.functional.relu(conv_2(f0))
-            x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
-            x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
+            print("\t\trelu(conv_x(x,f0))")
+            print(f"\t\tx:                          {x.shape}")
+            print(f"\t\tf0:                         {f0.shape}")
+            x_f0 = torch.cat((x, f0), dim=1)
+            print(f"\t\tx_f0:                       {x_f0.shape}")
             x_f0 = x_f0.transpose(1, 2)
+            print(f"\t\tx_f0:                       {x_f0.shape}")
+            expandlen = self.len_org.expand(x.size(0))
+            print(f"\t\texpandlen:                  {expandlen.shape}")
+            x_f0 = self.interp(x_f0, expandlen)
+            print(f"\t\tx_f0:                       {x_f0.shape}")
+            x_f0 = x_f0.transpose(1, 2)
+            print(f"\t\tx_f0:                       {x_f0.shape}")
             x = x_f0[:, : self.dim_enc, :]
             f0 = x_f0[:, self.dim_enc :, :]
+            print(f"\t\tx:                          {x.shape}")
+            print(f"\t\tf0:                         {f0.shape}")
+            print("\tendloop")
+        print(f"\t\tx_f0:                       {x_f0.shape}")
         x_f0 = x_f0.transpose(1, 2)
+        print(f"\t\tx_f0:                       {x_f0.shape}")
         x = x_f0[:, :, : self.dim_enc]
         f0 = x_f0[:, :, self.dim_enc :]
+        print(f"\t\tx:                          {x.shape}")
+        print(f"\t\tf0:                         {f0.shape}")
+        print("\tcode 1")
         # code 1
+
         x = self.lstm_1(x)[0]
-        f0 = self.lstm_2(f0)[0]
+        print(f"\t\tx:                          {x.shape}")
         x_forward = x[:, :, : self.dim_neck]
         x_backward = x[:, :, self.dim_neck :]
+        print(f"\t\tx_forward:                  {x_forward.shape}")
+        print(f"\t\tx_backward:                 {x_backward.shape}")
+        x_part_1 = x_forward[:, self.freq - 1 :: self.freq, :]
+        x_part_2 = x_backward[:, :: self.freq, :]
+        print(f"\t\tx_part_1:                   {x_part_1.shape}")
+        print(f"\t\tx_part_2:                   {x_part_2.shape}")
+        codes_x = torch.cat((x_part_1, x_part_2), dim=-1)
+        print(f"\t\tcodes_x:                    {codes_x.shape}")
+
+        f0 = self.lstm_2(f0)[0]
+        print(f"\t\tf0:                         {f0.shape}")
         f0_forward = f0[:, :, : self.dim_neck_3]
         f0_backward = f0[:, :, self.dim_neck_3 :]
-        codes_x = torch.cat(
-            (
-                x_forward[:, self.freq - 1 :: self.freq, :],
-                x_backward[:, :: self.freq, :],
-            ),
-            dim=-1,
-        )
-        codes_f0 = torch.cat(
-            (
-                f0_forward[:, self.freq_3 - 1 :: self.freq_3, :],
-                f0_backward[:, :: self.freq_3, :],
-            ),
-            dim=-1,
-        )
+        print(f"\t\tf0_forward:                 {f0_forward.shape}")
+        print(f"\t\tf0_backward:                {f0_backward.shape}")
+        f0_part_1 = f0_forward[:, self.freq_3 - 1 :: self.freq_3, :]
+        f0_part_2 = f0_backward[:, :: self.freq_3, :]
+        print(f"\t\tf0_part_1:                  {f0_part_1.shape}")
+        print(f"\t\tf0_part_2:                  {f0_part_2.shape}")
+        codes_f0 = torch.cat((f0_part_1, f0_part_2), dim=-1)
+        print(f"\t\tcodes_f0:                   {codes_f0.shape}")
         return codes_x, codes_f0
 
 
@@ -313,31 +348,47 @@ class Generator_3(torch.nn.Module):
         self.freq_3 = hparams.freq_3
 
     def forward(self, x_f0, x_org, c_trg):
-        print("Forward Instance:")
-        print(f"    x_f0: {x_f0.shape}")
-        print(f"    x_org: {x_org.shape}")
-        print(f"    c_trg: {c_trg.shape}")
-        exit()
+        print(f"\tx_f0:                     {x_f0.shape}")
+        print(f"\tx_org:                    {x_org.shape}")
+        print(f"\tc_trg:                    {c_trg.shape}")
         x_1 = x_f0.transpose(2, 1)
         x_2 = x_org.transpose(2, 1)
+        print(f"\tx_1:                      {x_1.shape}")
+        print(f"\tx_2:                      {x_2.shape}")
+        assert x_1.shape[2] == 192, f"x_1 shape incorrect: {x_1.shape}"
 
+        print("Sync Encoder:")
         codes_x, codes_f0 = self.encoder_1(x_1)
+        print("Rhythm Encoder:")
         codes_2 = self.encoder_2(x_2, None)
+        print("SpeechSplit:")
+        print(f"\tcodes_x:                  {codes_x.shape}")
+        print(f"\tcodes_f0:                 {codes_f0.shape}")
+        print(f"\tcodes_2:                  {codes_2.shape}")
 
         code_exp_1 = codes_x.repeat_interleave(self.freq, dim=1)
         code_exp_2 = codes_2.repeat_interleave(self.freq_2, dim=1)
         code_exp_3 = codes_f0.repeat_interleave(self.freq_3, dim=1)
+        print(f"\tcodes_exp_1:              {codes_x.shape}")
+        print(f"\tcodes_exp_2:              {codes_f0.shape}")
+        print(f"\tcodes_exp_3:              {codes_2.shape}")
 
+        c_step_1 = c_trg.unsqueeze(1)
+        c_step_2 = c_step_1.expand(-1, x_1.size(-1), -1)
+        print(f"\tc_step_1:                 {c_step_1.shape}")
+        print(f"\tc_step_2:                 {c_step_2.shape}")
         encoder_outputs = torch.cat(
             (
                 code_exp_1,
                 code_exp_2,
                 code_exp_3,
-                c_trg.unsqueeze(1).expand(-1, x_1.size(-1), -1),
+                c_step_2,
             ),
             dim=-1,
         )
+        print(f"\tencoder_outputs:          {encoder_outputs.shape}")
         mel_outputs = self.decoder(encoder_outputs)
+        print(f"\tmel_outputs:              {mel_outputs.shape}")
         return mel_outputs
 
     def rhythm(self, x_org):

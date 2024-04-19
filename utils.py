@@ -1,7 +1,6 @@
 import torch
-import numpy as np
+import numpy
 from scipy import signal
-from scipy.signal import get_window
 
 
 def butter_highpass(cutoff, fs, order=5):
@@ -13,17 +12,17 @@ def butter_highpass(cutoff, fs, order=5):
 
 def pySTFT(x, fft_length=1024, hop_length=256):
 
-    x = np.pad(x, int(fft_length // 2), mode="reflect")
+    x = numpy.pad(x, int(fft_length // 2), mode="reflect")
 
     noverlap = fft_length - hop_length
     shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // hop_length, fft_length)
     strides = x.strides[:-1] + (hop_length * x.strides[-1], x.strides[-1])
-    result = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
+    result = numpy.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
 
-    fft_window = get_window("hann", fft_length, fftbins=True)
-    result = np.fft.rfft(fft_window * result, n=fft_length).T
+    fft_window = signal.get_window("hann", fft_length, fftbins=True)
+    result = numpy.fft.rfft(fft_window * result, n=fft_length).T
 
-    return np.abs(result)
+    return numpy.abs(result)
 
 
 def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
@@ -31,7 +30,7 @@ def speaker_normalization(f0, index_nonzero, mean_f0, std_f0):
     f0 = f0.astype(float).copy()
     # index_nonzero = f0 != 0
     f0[index_nonzero] = (f0[index_nonzero] - mean_f0) / std_f0 / 4.0
-    f0[index_nonzero] = np.clip(f0[index_nonzero], -1, 1)
+    f0[index_nonzero] = numpy.clip(f0[index_nonzero], -1, 1)
     f0[index_nonzero] = (f0[index_nonzero] + 1) / 2.0
     return f0
 
@@ -43,12 +42,12 @@ def quantize_f0_numpy(x, num_bins=256):
     uv = x <= 0
     x[uv] = 0.0
     assert (x >= 0).all() and (x <= 1).all()
-    x = np.round(x * (num_bins - 1))
+    x = numpy.round(x * (num_bins - 1))
     x = x + 1
     x[uv] = 0.0
-    enc = np.zeros((len(x), num_bins + 1), dtype=np.float32)
-    enc[np.arange(len(x)), x.astype(np.int32)] = 1.0
-    return enc, x.astype(np.int64)
+    enc = numpy.zeros((len(x), num_bins + 1), dtype=numpy.float32)
+    enc[numpy.arange(len(x)), x.astype(numpy.int32)] = 1.0
+    return enc, x.astype(numpy.int64)
 
 
 def quantize_f0_torch(x, num_bins=256):
@@ -75,4 +74,4 @@ def get_mask_from_lengths(lengths, max_len):
 def pad_seq_to_2(x, len_out=128):
     len_pad = len_out - x.shape[1]
     assert len_pad >= 0
-    return np.pad(x, ((0, 0), (0, len_pad), (0, 0)), "constant"), len_pad
+    return numpy.pad(x, ((0, 0), (0, len_pad), (0, 0)), "constant"), len_pad

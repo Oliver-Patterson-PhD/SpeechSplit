@@ -148,24 +148,39 @@ class Solver(object):
             #                               2. Train the generator                                #
             # =================================================================================== #
 
-            print("DATA:")
-            print(f"\tdata_iter: {data_iter}")
-            print(f"\tx_real_org: {x_real_org.shape}")
-            print(f"\temb_org: {emb_org.shape}")
-            print(f"\tf0_org: {f0_org.shape}")
-            print(f"\tlen_org: {len_org.shape}")
+            print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            torch.set_printoptions(profile="full")
+            print(len_org)
+            torch.set_printoptions(profile="default")
+            print("External:")
+            print(f"\tdata_iter:                {data_iter}")
+            print(f"\tx_real_org:               {x_real_org.shape}")
+            print(f"\temb_org:                  {emb_org.shape}")
+            print(f"\tf0_org:                   {f0_org.shape}")
+            print(f"\tlen_org:                  {len_org.shape}")
             self.G = self.G.train()
 
             # Identity mapping loss
             x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
-            print(f"\tx_f0: {x_f0.shape}")
-            print(f"\nemb_org: {emb_org}")
+            print(f"\tx_f0:                     {x_f0.shape}")
             x_f0_intrp = self.Interp(x_f0, len_org)
-            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:, :, -1])[0]
-            x_f0_intrp_org = torch.cat((x_f0_intrp[:, :, :-1], f0_org_intrp), dim=-1)
+            print(f"\tx_f0_intrp:               {x_f0_intrp.shape}")
+            x_f0_intrp_strip = x_f0_intrp[:, :, -1]
+            x_f0_intrp_left = x_f0_intrp[:, :, :-1]
+            print(f"\tx_f0_intrp_strip:         {x_f0_intrp_strip.shape}")
+            print(f"\tx_f0_intrp_left:          {x_f0_intrp_left.shape}")
+            f0_org_intrp = quantize_f0_torch(x_f0_intrp_strip)[0]
+            print(f"\tf0_org_intrp:             {f0_org_intrp.shape}")
+            x_f0_intrp_org = torch.cat((x_f0_intrp_left, f0_org_intrp), dim=-1)
+            print(f"\tx_f0_intrp_org:           {x_f0_intrp_org.shape}")
 
+            print("Internal:")
             x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
+            print("External:")
+
+            print(f"\tx_identic:                {x_identic.shape}")
             g_loss_id = F.mse_loss(x_real_org, x_identic, reduction="mean")
+            print(f"\tg_loss_id:                {g_loss_id}")
 
             # Backward and optimize.
             g_loss = g_loss_id
@@ -176,6 +191,9 @@ class Solver(object):
             # Logging.
             loss = {}
             loss["G/loss_id"] = g_loss_id.item()
+
+            print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            exit()
 
             # =================================================================================== #
             #                                 4. Miscellaneous                                    #
