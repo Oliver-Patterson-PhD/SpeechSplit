@@ -6,6 +6,7 @@ import scipy
 import librosa
 import pysptk
 import utils
+from hparams import hparams
 
 
 mel_basis = librosa.filters.mel(sr=16000, n_fft=1024, fmin=90, fmax=7600, n_mels=80).T
@@ -16,9 +17,9 @@ spk2gen = pickle.load(open("assets/spk2gen.pkl", "rb"))
 
 
 # Modify as needed
-rootDir = "assets/wavs"
-targetDir_f0 = "assets/raptf0"
-targetDir = "assets/spmel"
+rootDir = hparams.raw_dir
+targetDir_f0 = hparams.root_dir
+targetDir = hparams.feat_dir
 
 
 dirName, subdirList, _ = next(os.walk(rootDir))
@@ -44,7 +45,7 @@ for subdir in sorted(subdirList):
     for fileName in sorted(fileList):
         # read audio file
         x, fs = soundfile.read(os.path.join(dirName, subdir, fileName))
-        assert fs == 16000
+        assert fs == 16000, f"Sample Rate: {fs}"
         if x.shape[0] % 256 == 0:
             x = numpy.concatenate((x, numpy.array([1e-06])), axis=0)
         y = scipy.signal.filtfilt(b, a, x)
@@ -61,9 +62,7 @@ for subdir in sorted(subdirList):
             wav.astype(numpy.float32) * 32768, fs, 256, min=lo, max=hi, otype=2
         )
         index_nonzero = f0_rapt != -1e10
-        mean_f0, std_f0 = numpy.mean(f0_rapt[index_nonzero]), numpy.std(
-            f0_rapt[index_nonzero]
-        )
+        mean_f0, std_f0 = numpy.mean(f0_rapt[index_nonzero]), numpy.std(f0_rapt[index_nonzero])
         f0_norm = utils.speaker_normalization(f0_rapt, index_nonzero, mean_f0, std_f0)
 
         assert len(S) == len(f0_rapt)

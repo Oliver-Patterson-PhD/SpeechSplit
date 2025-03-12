@@ -44,8 +44,9 @@ hparams = HParams(
     max_len_seq=128,
     max_len_pad=192,
     # data loader
-    root_dir="assets/spmel",
-    feat_dir="assets/raptf0",
+    raw_dir="/mnt/datasets/processed/VCTK-Corpus/wavs",
+    root_dir="/mnt/datasets/processed/VCTK-Corpus/spmel",
+    feat_dir="/mnt/datasets/processed/VCTK-Corpus/raptf0",
     batch_size=16,
     mode="train",
     shuffle=True,

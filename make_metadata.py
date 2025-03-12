@@ -1,8 +1,9 @@
 import os
 import pickle
 import numpy
+from hparams import hparams
 
-rootDir = "assets/spmel"
+rootDir = hparams.root_dir
 dirName, subdirList, _ = next(os.walk(rootDir))
 print("Found directory: %s" % dirName)
 
